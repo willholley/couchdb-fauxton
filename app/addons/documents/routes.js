@@ -128,28 +128,10 @@ function(app, FauxtonAPI, Documents, Databases, Resources) {
         route: "allDocs",
         roles: ["_reader","_writer","_admin"]
       },
-      "database/:database/_design/:ddoc/_view/:view": {
-        route: "viewFn",
-        roles: ['_admin']
-      },
-      "database/:database/_design/:ddoc/_lists/:fn": {
-        route: "tempFn",
-        roles: ['_admin']
-      },
-      "database/:database/_design/:ddoc/_filters/:fn": {
-        route: "tempFn",
-        roles: ['_admin']
-      },
-      "database/:database/_design/:ddoc/_show/:fn": {
-        route: "tempFn",
-        roles: ['_admin']
-      },
       "database/:database/_design/:ddoc/metadata": {
         route: "designDocMetadata",
         roles: ['_admin']
       },
-      "database/:database/new_view": "newViewEditor",
-      "database/:database/new_view/:designDoc": "newViewEditor",
       "database/:database/_changes(:params)": "changes"
     },
 
@@ -199,15 +181,6 @@ function(app, FauxtonAPI, Documents, Databases, Resources) {
 
       this.sidebar.setSelectedTab(app.utils.removeSpecialCharacters(ddoc)+"_metadata");
 
-      this.crumbs = function () {
-        return [
-          {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)},
-        ];
-      };
-
-    },
-    tempFn:  function(databaseName, ddoc, fn){
-      this.setView("#dashboard-upper-content", new Documents.Views.temp({}));
       this.crumbs = function () {
         return [
           {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)},
@@ -279,56 +252,6 @@ function(app, FauxtonAPI, Documents, Databases, Resources) {
       this.apiUrl = [this.data.database.allDocs.urlRef("apiurl", urlParams), this.data.database.allDocs.documentation() ];
     },
 
-    viewFn: function (databaseName, ddoc, view) {
-      var params = this.createParams(),
-          urlParams = params.urlParams,
-          docParams = params.docParams,
-          decodeDdoc = decodeURIComponent(ddoc);
-
-      view = view.replace(/\?.*$/,'');
-
-      this.data.indexedDocs = new Documents.IndexCollection(null, {
-        database: this.data.database,
-        design: decodeDdoc,
-        view: view,
-        params: docParams,
-        paging: {
-          pageSize: this.getDocPerPageLimit(urlParams, parseInt(docParams.limit, 10))
-        }
-      });
-
-      this.viewEditor = this.setView("#dashboard-upper-content", new Documents.Views.ViewEditor({
-        model: this.data.database,
-        ddocs: this.data.designDocs,
-        viewName: view,
-        params: urlParams,
-        newView: false,
-        database: this.data.database,
-        ddocInfo: this.ddocInfo(decodeDdoc, this.data.designDocs, view)
-      }));
-
-      this.toolsView && this.toolsView.remove();
-
-      this.documentsView = this.createViewDocumentsView({
-        designDoc: decodeDdoc,
-        docParams: docParams,
-        urlParams: urlParams,
-        database: this.data.database,
-        indexedDocs: this.data.indexedDocs,
-        designDocs: this.data.designDocs,
-        view: view
-      });
-
-      this.sidebar.setSelectedTab(app.utils.removeSpecialCharacters(ddoc) + '_' + app.utils.removeSpecialCharacters(view));
-
-      this.crumbs = function () {
-        return [
-          {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)},
-        ];
-      };
-
-      this.apiUrl = [this.data.indexedDocs.urlRef("apiurl", urlParams), "docs"];
-    },
 
     ddocInfo: function (designDoc, designDocs, view) {
       return {
@@ -349,28 +272,6 @@ function(app, FauxtonAPI, Documents, Databases, Resources) {
         docParams: options.docParams,
         params: options.urlParams
       }));
-    },
-
-    newViewEditor: function (database, designDoc) {
-      var params = app.getParams();
-
-      this.toolsView && this.toolsView.remove();
-      this.documentsView && this.documentsView.remove();
-
-      this.viewEditor = this.setView("#dashboard-upper-content", new Documents.Views.ViewEditor({
-        currentddoc: "_design/"+designDoc || "",
-        ddocs: this.data.designDocs,
-        params: params,
-        database: this.data.database,
-        newView: true
-      }));
-
-      this.sidebar.setSelectedTab('new-view');
-      this.crumbs = function () {
-        return [
-          {"name": this.data.database.id, "link": Databases.databaseUrl(this.data.database)},
-        ];
-      };
     },
 
     updateAllDocsFromView: function (event) {

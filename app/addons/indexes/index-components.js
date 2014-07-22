@@ -23,6 +23,8 @@ define([
 ],
 
 function(app, FauxtonAPI) {
+  var Components = {};
 
 
+  return Components;
 });
